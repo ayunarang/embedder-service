@@ -5,7 +5,7 @@ from typing import List
 
 app = FastAPI()
 
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+model = SentenceTransformer("paraphrase-MiniLM-L3-v2")
 
 class EmbedRequest(BaseModel):
     texts: List[str]
