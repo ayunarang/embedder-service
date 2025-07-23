@@ -10,6 +10,10 @@ model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 class EmbedRequest(BaseModel):
     texts: List[str]
 
+@app.get("/")
+def root():
+    return {"message": "OK"}
+
 @app.post("/embed")
 def embed_texts(data: EmbedRequest):
     try:
