@@ -8,9 +8,8 @@ import gc
 
 app = FastAPI()
 
-# Load model and tokenizer once
 session = ort.InferenceSession("onnx/model.onnx", providers=["CPUExecutionProvider"])
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+tokenizer = AutoTokenizer.from_pretrained("onnx/")
 
 class EmbedRequest(BaseModel):
     texts: List[str]
@@ -18,40 +17,35 @@ class EmbedRequest(BaseModel):
 @app.get("/")
 def root():
     return {"message": "OK"}
-    
 
 @app.post("/embed")
 def embed(req: EmbedRequest):
-    # Limit batch size for lower RAM footprint
-    texts = req.texts[:10]
+    texts = req.texts[:10] 
 
-    # Tokenize
     encoded = tokenizer(
         texts,
         padding=True,
         truncation=True,
-        max_length=256,  
+        max_length=128, 
         return_tensors="np"
     )
 
-    # Prepare ONNX input
     ort_inputs = {
         "input_ids": encoded["input_ids"],
         "attention_mask": encoded["attention_mask"]
     }
-
-    # Inference
     outputs = session.run(None, ort_inputs)
     last_hidden_state = outputs[0]
 
-    # Mean Pooling
     mask = np.expand_dims(encoded["attention_mask"], -1).astype(np.float32)
     summed = np.sum(last_hidden_state * mask, axis=1)
     norm = np.clip(mask.sum(1), a_min=1e-9, a_max=None)
     mean_pooled = summed / norm
 
-    # Explicit cleanup
-    del encoded, outputs, last_hidden_state, mask, summed, norm
+    norms = np.linalg.norm(mean_pooled, axis=1, keepdims=True)
+    mean_pooled = mean_pooled / np.clip(norms, a_min=1e-9, a_max=None)
+
+    del encoded, outputs, last_hidden_state, mask, summed, norm, norms
     gc.collect()
 
     return {"embeddings": mean_pooled.tolist()}
