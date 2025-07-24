@@ -10,7 +10,7 @@ app = FastAPI()
 
 # Load model and tokenizer once
 session = ort.InferenceSession("onnx/model.onnx", providers=["CPUExecutionProvider"])
-tokenizer = AutoTokenizer.from_pretrained("tokenizer")
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
 class EmbedRequest(BaseModel):
     texts: List[str]
