@@ -1,14 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
 from typing import List
+from InstructorEmbedding import INSTRUCTOR
+import torch
 
 app = FastAPI()
 
-model = SentenceTransformer("paraphrase-MiniLM-L3-v2")
+device = torch.device("cpu")
+model = INSTRUCTOR("hkunlp/instructor-xl", device=device)
 
 class EmbedRequest(BaseModel):
     texts: List[str]
+    instructions: List[str]
 
 @app.get("/")
 def root():
@@ -17,7 +20,11 @@ def root():
 @app.post("/embed")
 def embed_texts(data: EmbedRequest):
     try:
-        embeddings = model.encode(data.texts, show_progress_bar=False).tolist()
+        if len(data.texts) != len(data.instructions):
+            raise ValueError("Each text must have a corresponding instruction.")
+        inputs = list(zip(data.instructions, data.texts))
+        with torch.no_grad():
+            embeddings = model.encode(inputs).tolist()
         return {"embeddings": embeddings}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
