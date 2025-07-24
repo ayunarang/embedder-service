@@ -15,6 +15,11 @@ tokenizer = AutoTokenizer.from_pretrained("tokenizer")
 class EmbedRequest(BaseModel):
     texts: List[str]
 
+@app.get("/")
+def root():
+    return {"message": "OK"}
+    
+
 @app.post("/embed")
 def embed(req: EmbedRequest):
     # Limit batch size for lower RAM footprint
