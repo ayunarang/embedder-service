@@ -5,8 +5,22 @@ import onnxruntime as ort
 from transformers import AutoTokenizer
 import numpy as np
 import gc
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:8000",                   
+    "https://nexa-ai-2hd6.onrender.com",      
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins, 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 session = ort.InferenceSession("onnx/model.onnx", providers=["CPUExecutionProvider"])
 tokenizer = AutoTokenizer.from_pretrained("onnx/")
